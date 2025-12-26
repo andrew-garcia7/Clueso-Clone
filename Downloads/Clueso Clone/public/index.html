@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clueso Clone - AI Topic Explainer</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        /* Product positioning intro */
+        .intro-section {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .intro-text {
+            color: #555;
+            line-height: 1.6;
+            font-size: 15px;
+            margin: 0;
+        }
+
+        /* Input section */
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Button */
+        .generate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .generate-btn:active {
+            transform: translateY(0);
+        }
+
+        .generate-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Output section */
+        .output-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            min-height: 100px;
+            display: none;
+        }
+
+        .output-section.show {
+            display: block;
+        }
+
+        .output-content {
+            white-space: pre-line;
+            line-height: 1.8;
+            color: #333;
+            font-size: 16px;
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error message */
+        .error {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #d32f2f;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Clueso Clone</h1>
+        <p class="subtitle">Get clear, structured explanations for any topic</p>
+
+        <!-- Product Positioning Section -->
+        <div class="intro-section">
+            <p class="intro-text">
+                This tool converts user questions into structured, actionable insights using AI-style reasoning. 
+                Enter any question or topic below to receive a comprehensive explanation with key points, 
+                step-by-step guidance, and real-world examples.
+            </p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="input-section">
+            <label for="topic">Enter a topic you'd like to learn about:</label>
+            <textarea 
+                id="topic" 
+                placeholder="e.g., How does photosynthesis work? What is machine learning? Explain quantum computing..."
+                rows="4"
+            ></textarea>
+        </div>
+
+        <!-- Generate Button -->
+        <button class="generate-btn" id="generateBtn" onclick="generateExplanation()">
+            Generate Explanation
+        </button>
+
+        <!-- Output Section -->
+        <div class="output-section" id="outputSection">
+            <div id="outputContent"></div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Frontend Architecture:
+         * 
+         * This script is organized into three clear layers:
+         * 1. UI Layer: DOM manipulation and user interaction
+         * 2. API Communication Layer: fetch() calls to backend
+         * 3. State Management: Loading states, error handling
+         * 
+         * This separation makes the code maintainable and testable.
+         */
+
+        // ============================================
+        // API COMMUNICATION LAYER
+        // ============================================
+
+        /**
+         * Sends a request to the backend API to generate insights
+         * 
+         * @param {string} topic - The user's question or topic
+         * @returns {Promise<{result: string}>} - The generated insights
+         * @throws {Error} - If the API request fails
+         */
+        async function callGenerateAPI(topic) {
+            const response = await fetch('/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ topic: topic })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to generate insights');
+            }
+
+            return data;
+        }
+
+        // ============================================
+        // UI STATE MANAGEMENT
+        // ============================================
+
+        /**
+         * Updates UI to show loading state
+         */
+        function setLoadingState(isLoading) {
+            const generateBtn = document.getElementById('generateBtn');
+            const outputSection = document.getElementById('outputSection');
+            const outputContent = document.getElementById('outputContent');
+
+            if (isLoading) {
+                generateBtn.disabled = true;
+                generateBtn.textContent = 'Generating...';
+                outputSection.classList.add('show');
+                outputContent.innerHTML = '<div class="loading"><div class="spinner"></div>Generating your explanation...</div>';
+            } else {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Explanation';
+            }
+        }
+
+        /**
+         * Displays the generated insights to the user
+         */
+        function displayResult(result) {
+            const outputSection = document.getElementById('outputSection');
+            const outputContent = document.getElementById('outputContent');
+            
+            outputSection.classList.add('show');
+            outputContent.innerHTML = `<div class="output-content">${result}</div>`;
+        }
+
+        /**
+         * Displays an error message to the user
+         */
+        function showError(message) {
+            const outputSection = document.getElementById('outputSection');
+            const outputContent = document.getElementById('outputContent');
+            
+            outputSection.classList.add('show');
+            outputContent.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // ============================================
+        // MAIN USER INTERACTION HANDLER
+        // ============================================
+
+        /**
+         * Main function that orchestrates the explanation generation flow
+         * 
+         * Flow:
+         * 1. Validate user input
+         * 2. Show loading state
+         * 3. Call API
+         * 4. Display result or error
+         * 5. Reset UI state
+         */
+        async function generateExplanation() {
+            // Get and validate input
+            const topicInput = document.getElementById('topic');
+            const topic = topicInput.value.trim();
+
+            if (!topic) {
+                showError('Please enter a question or topic before generating insights.');
+                return;
+            }
+
+            // Set loading state
+            setLoadingState(true);
+
+            try {
+                // Call API
+                const data = await callGenerateAPI(topic);
+                
+                // Display result
+                displayResult(data.result);
+            } catch (error) {
+                // Handle errors gracefully
+                console.error('Error generating insights:', error);
+                showError(error.message || 'Something went wrong. Please try again.');
+            } finally {
+                // Reset button state
+                setLoadingState(false);
+            }
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+
+        /**
+         * Allow Enter key to trigger generation (Shift+Enter for new line)
+         */
+        document.getElementById('topic').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                generateExplanation();
+            }
+        });
+    </script>
+</body>
+</html>
+
